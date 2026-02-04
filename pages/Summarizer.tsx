@@ -66,7 +66,7 @@ const Summarizer: React.FC<SummarizerProps> = ({ onSave, notes, onAddToNote }) =
         try {
             const newMode: CustomMode = {
                 id: editingCustomMode?.id || Date.now().toString(),
-                userId: '', // Will be set by storage service
+                userId: StorageService.currentUserId || '',
                 name: customModeText.trim(),
                 systemPrompt: customModePrompt.trim(),
                 createdAt: Date.now()
