@@ -219,7 +219,8 @@ const BlockComponent: React.FC<BlockProps> = ({
 
             case 'image': return 'my-2';
             case 'link': return 'text-blue-400 hover:text-blue-300 underline cursor-pointer';
-            default: return 'text-base min-h-[1.5em] text-gray-300 py-1 leading-relaxed';
+            default: return 'text-base min-h-[1.5em] text-gray-300 py-1 leading-relaxed break-words';
+
         }
     };
 
