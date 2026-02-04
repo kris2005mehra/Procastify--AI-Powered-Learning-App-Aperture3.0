@@ -2,10 +2,9 @@ import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { UserPreferences, RoutineTask, Question, Flashcard, Note, QueueItem, Attachment } from '../types';
 
 const getAI = () => {
-  // @ts-ignore - Vite env
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+  const apiKey = (import.meta.env as any).VITE_GEMINI_API_KEY || (process.env as any).VITE_GEMINI_API_KEY;
   if (!apiKey) {
-    console.warn("API Key is missing. Quiz and other AI features won't work.");
+    // API key missing - features will be limited
   }
   return new GoogleGenAI({ apiKey: apiKey || '' });
 };
@@ -56,7 +55,8 @@ import { prepareTextForSummarization } from './extractionService';
 export const summarizeContent = async (
   textContext: string,
   attachments: Attachment[],
-  mode: 'short' | 'detailed' | 'eli5' | 'exam'
+  mode: string,
+  customPrompt?: string
 ): Promise<string> => {
   const ai = getAI();
 
@@ -77,11 +77,18 @@ export const summarizeContent = async (
   }
 
   let systemPrompt = "";
-  switch (mode) {
-    case 'eli5': systemPrompt = "Explain this content like I'm 5 years old. Use simple analogies."; break;
-    case 'exam': systemPrompt = "Summarize for exam prep. Focus on definitions, dates, formulas, and key concepts. Use structured bullet points."; break;
-    case 'detailed': systemPrompt = "Provide a comprehensive, detailed summary with examples."; break;
-    case 'short': default: systemPrompt = "Concise key points only. Bullet points."; break;
+  
+  // If a custom prompt is provided, use it
+  if (customPrompt) {
+    systemPrompt = customPrompt;
+  } else {
+    // Use predefined modes
+    switch (mode) {
+      case 'eli5': systemPrompt = "Explain this content like I'm 5 years old. Use simple analogies."; break;
+      case 'exam': systemPrompt = "Summarize for exam prep. Focus on definitions, dates, formulas, and key concepts. Use structured bullet points."; break;
+      case 'detailed': systemPrompt = "Provide a comprehensive, detailed summary with examples."; break;
+      case 'short': default: systemPrompt = "Concise key points only. Bullet points."; break;
+    }
   }
 
   try {
