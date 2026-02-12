@@ -18,20 +18,6 @@ export interface CanvasBoardRef {
     clear: () => void;
 }
 
-function ToolButton({ icon, active, onClick, title }: { icon: React.ReactNode; active: boolean; onClick: () => void; title?: string }) {
-    return (
-        <button
-            onClick={onClick}
-            title={title}
-            className={`p-2 rounded-md transition-all ${active
-                ? "bg-indigo-600 text-white"
-                : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
-                }`}
-        >
-            {icon}
-        </button>
-    );
-}
 
 const CanvasBoard = forwardRef<CanvasBoardRef, CanvasBoardProps>(({ canvasId, readOnly = false, elements, onShapesAdded }: CanvasBoardProps, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -409,3 +395,5 @@ function StyleButton({
         </button>
     )
 }
+
+export default CanvasBoard;
