@@ -3,6 +3,7 @@ import { ViewState, UserPreferences, Summary, Note, RoutineTask, UserStats, Flas
 import { StorageService } from './services/storageService';
 import { auth } from './firebaseConfig';
 import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
+import { ThemeProvider } from './contexts/ThemeContext';
 import Sidebar from './components/Sidebar';
 import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
@@ -282,10 +283,10 @@ const App: React.FC = () => {
                 {/* Login Modal */}
                 {showLoginModal && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                        <div className="bg-[#1e1f22] p-8 rounded-2xl w-full max-w-md border border-white/10 shadow-2xl animate-in zoom-in-95">
+                        <div className="bg-app-panel p-8 rounded-2xl w-full max-w-md border border-app-border shadow-2xl animate-in zoom-in-95">
                             <div className="flex justify-between items-center mb-6">
-                                <h2 className="text-2xl font-bold text-white">{isSignUp ? 'Create Account' : 'Welcome Back'}</h2>
-                                <button onClick={() => setShowLoginModal(false)} className="text-gray-400 hover:text-white"><X /></button>
+                                <h2 className="text-2xl font-bold text-app-text">{isSignUp ? 'Create Account' : 'Welcome Back'}</h2>
+                                <button onClick={() => setShowLoginModal(false)} className="text-app-textMuted hover:text-app-text"><X /></button>
                             </div>
 
                             {authError && <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-lg">{authError}</div>}
@@ -313,7 +314,7 @@ const App: React.FC = () => {
                                 {isSignUp ? 'Sign Up' : 'Sign In'}
                             </button>
 
-                            <p className="text-center text-sm text-gray-400">
+                            <p className="text-center text-sm text-app-textMuted">
                                 {isSignUp ? "Already have an account?" : "Don't have an account?"}
                                 <button onClick={() => setIsSignUp(!isSignUp)} className="ml-2 text-[#5865F2] hover:underline font-bold">
                                     {isSignUp ? 'Sign In' : 'Sign Up'}
@@ -331,7 +332,7 @@ const App: React.FC = () => {
 
 
     return (
-        <div className="flex min-h-screen bg-[#1e1f22]">
+        <div className="flex min-h-screen bg-app-bg">
             <Sidebar
                 currentView={view}
                 onNavigate={setView}
@@ -424,15 +425,15 @@ const App: React.FC = () => {
 
             {showLoginModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                    <div className="bg-[#1e1f22] p-8 rounded-2xl w-full max-w-md border border-white/10 shadow-2xl animate-in zoom-in-95">
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-2xl font-bold text-white">Sync Account</h2>
+                        <div className="bg-app-panel p-8 rounded-2xl w-full max-w-md border border-app-border shadow-2xl animate-in zoom-in-95">
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-xl font-bold text-app-text">Sync Account</h2>
                             <button onClick={() => setShowLoginModal(false)} className="text-gray-400 hover:text-white"><X /></button>
                         </div>
 
                         {authError && <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-lg">{authError}</div>}
 
-                        <p className="text-gray-400 mb-6">Create an account to sync your current guest data to the cloud.</p>
+                        <p className="text-app-textMuted mb-6">Create an account to sync your current guest data to the cloud.</p>
                         <input
                             type="email"
                             className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-[#5865F2] mb-4"
@@ -454,7 +455,7 @@ const App: React.FC = () => {
                         >
                             {isSignUp ? 'Sign Up & Sync' : 'Sign In & Sync'}
                         </button>
-                        <p className="text-center text-sm text-gray-400 mt-4">
+                        <p className="text-center text-sm text-app-textMuted mt-4">
                             {isSignUp ? "Already have an account?" : "Don't have an account?"}
                             <button onClick={() => setIsSignUp(!isSignUp)} className="ml-2 text-[#5865F2] hover:underline font-bold">
                                 {isSignUp ? 'Sign In' : 'Sign Up'}
@@ -468,4 +469,12 @@ const App: React.FC = () => {
     );
 };
 
-export default App;
+const ThemedApp: React.FC = () => {
+    return (
+        <ThemeProvider>
+            <App />
+        </ThemeProvider>
+    );
+};
+
+export default ThemedApp;
