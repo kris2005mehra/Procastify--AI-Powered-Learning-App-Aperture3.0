@@ -16,6 +16,9 @@ import {
   Image as ImageIcon,
   Video,
   FileText,
+  Headphones,
+  Mic,
+  Volume2
 } from "lucide-react";
 import { generateReels } from "../services/geminiService";
 
@@ -25,7 +28,7 @@ interface NoteFeedProps {
   onClose: () => void;
 }
 
-type ReelType = "text" | "image" | "video";
+type ReelType = "text" | "image" | "video" | "audio";
 
 interface ReelItem {
   id: string;
@@ -61,37 +64,256 @@ const ImageReel = ({ reel }: { reel: ReelItem }) => (
   </div>
 );
 
-const VideoReel = ({ reel, isActive }: { reel: ReelItem; isActive: boolean }) => (
-  <div className="relative w-full h-full bg-black flex flex-col justify-center items-center">
-    {/* Video Mock UI */}
-    <div className="absolute inset-0 bg-gray-900 opacity-50"></div>
-    {/* Animated Background to simulate video content */}
-    <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 to-black animate-pulse" />
 
-    <div className="z-10 flex flex-col items-center gap-6 p-8 w-full max-w-lg text-center">
-      <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 cursor-pointer hover:scale-110 transition-transform">
-        <Play size={32} className="text-white fill-white ml-1" />
+const VIDEO_BACKGROUNDS = [
+  "https://cdn.pixabay.com/video/2019/04/20/22908-331661159_large.mp4", // Abstract geometric
+  "https://cdn.pixabay.com/video/2020/04/18/36466-409949826_large.mp4", // Ink floating
+  "https://cdn.pixabay.com/video/2020/11/01/54756-476685532_large.mp4", // Tech particles
+  "https://cdn.pixabay.com/video/2023/10/19/185764-876113941_large.mp4", // Digital waves
+];
+
+const VideoReel = ({ reel, isActive }: { reel: ReelItem; isActive: boolean }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [bgUrl, setBgUrl] = useState("");
+  const [wordIndex, setWordIndex] = useState(0);
+  const words = reel.content.split(" ");
+
+  // Select a random video based on reel content hash/index to keep it consistent
+  useEffect(() => {
+    const index = reel.content.length % VIDEO_BACKGROUNDS.length;
+    setBgUrl(VIDEO_BACKGROUNDS[index]);
+  }, [reel.id]);
+
+  useEffect(() => {
+    if (isActive) {
+      if (videoRef.current) {
+        videoRef.current.currentTime = 0;
+        videoRef.current.play().catch(() => {
+           // Autoplay policy might block, but we try
+           setIsPlaying(true);
+        });
+        setIsPlaying(true);
+      }
+      setWordIndex(0);
+    } else {
+      if (videoRef.current) {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      }
+    }
+  }, [isActive]);
+
+  // Sync words with "video" time simulation
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isPlaying && wordIndex < words.length) {
+      // Reveal words over 5 seconds roughly
+      const speed = 4000 / words.length; 
+      interval = setInterval(() => {
+        setWordIndex(prev => prev + 1);
+      }, speed);
+    }
+    return () => clearInterval(interval);
+  }, [isPlaying, wordIndex, words.length]);
+
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  return (
+    <div className="relative w-full h-full bg-black flex flex-col justify-center items-center overflow-hidden">
+      {/* Real Video Background */}
+      <video
+        ref={videoRef}
+        src={bgUrl}
+        className="absolute inset-0 w-full h-full object-cover opacity-60"
+        loop
+        playsInline
+        muted // Muted for autoplay
+      />
+      
+      {/* Dark Overlay for Readability */}
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"></div>
+      
+      <div className="z-10 relative px-8 w-full max-w-lg">
+         {/* Kinetic Typography Container */}
+         <div className="min-h-[200px] flex flex-wrap content-center justify-center gap-x-3 gap-y-2">
+            {words.map((word, i) => (
+                <motion.span
+                    key={i}
+                    initial={{ opacity: 0, y: 20, scale: 0.8 }}
+                    animate={{ 
+                        opacity: i <= wordIndex ? 1 : 0.1, 
+                        y: i <= wordIndex ? 0 : 10,
+                        scale: i === wordIndex ? 1.1 : 1,
+                        color: i === wordIndex ? "#fbbf24" : "#ffffff", // Highlight current word
+                        filter: i > wordIndex ? "blur(4px)" : "blur(0px)" 
+                    }}
+                    transition={{ duration: 0.3 }}
+                    className="text-3xl md:text-4xl font-black font-sans tracking-tight drop-shadow-lg"
+                >
+                    {word}
+                </motion.span>
+            ))}
+         </div>
       </div>
 
-      <div className="bg-black/60 backdrop-blur-md p-6 rounded-xl border border-white/10 mt-8">
-        <p className="text-lg md:text-xl font-medium text-white/90 leading-relaxed font-mono">
-          "{reel.content}"
-        </p>
+      {/* Controls */}
+      <div className="absolute inset-0 z-20 flex items-center justify-center" onClick={togglePlay}>
+         {/* Invisible click layer, but show play button if paused */}
+         {!isPlaying && (
+            <div className="w-20 h-20 bg-black/50 rounded-full flex items-center justify-center backdrop-blur-md border border-white/20">
+                <Play size={40} className="text-white fill-white ml-2" />
+            </div>
+         )}
       </div>
-    </div>
 
-    {/* Progress Bar */}
-    <div className="absolute bottom-4 left-4 right-4 h-1 bg-white/20 rounded-full overflow-hidden">
-       <motion.div
-         initial={{ width: "0%" }}
-         animate={isActive ? { width: "100%" } : { width: "0%" }}
-         transition={{ duration: 5, ease: "linear", repeat: isActive ? Infinity : 0 }}
-         className="h-full bg-white"
-       />
-    </div>
+      {/* Progress Bar */}
+      <div className="absolute bottom-6 left-6 right-6 h-1.5 bg-white/20 rounded-full overflow-hidden z-30">
+         <motion.div
+           className="h-full bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.8)]"
+           initial={{ width: "0%" }}
+           animate={{ width: isPlaying ? "100%" : `${(wordIndex / words.length) * 100}%` }}
+           transition={{ duration: isPlaying ? 5 : 0, ease: "linear" }}
+         />
+      </div>
+      
+      <div className="absolute bottom-10 right-6 z-30 text-white/80 text-xs font-bold bg-black/50 px-2 py-1 rounded border border-white/10 uppercase">
+        AI Generated Video
+      </div>
   </div>
-);
+  );
+}; // End VideoReel
 
+const AudioReel = ({ reel, isActive }: { reel: ReelItem; isActive: boolean }) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  
+  useEffect(() => {
+    // Clean up any existing speech when switching reels
+    window.speechSynthesis.cancel();
+    setIsPlaying(false);
+    
+    // Auto-play when active
+    if (isActive) {
+      const timer = setTimeout(() => handlePlay(), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isActive, reel.id]);
+
+  const handlePlay = () => {
+    window.speechSynthesis.cancel(); // Stop any previous
+    
+    const utterance = new SpeechSynthesisUtterance(reel.content);
+    utterance.rate = 1.0;
+    utterance.volume = 1;
+    
+    // Attempt to pick a good voice
+    const voices = window.speechSynthesis.getVoices();
+    const preferredVoice = voices.find(v => v.name.includes("Google") || v.name.includes("English United States")) || voices[0];
+    if (preferredVoice) utterance.voice = preferredVoice;
+
+    utterance.onend = () => setIsPlaying(false);
+    utterance.onstart = () => setIsPlaying(true);
+    
+    window.speechSynthesis.speak(utterance);
+    setIsPlaying(true);
+  };
+
+  const handleToggle = () => {
+    if (isPlaying) {
+      window.speechSynthesis.cancel();
+      setIsPlaying(false);
+    } else {
+      handlePlay();
+    }
+  };
+
+  return (
+    <div className="relative w-full h-full flex flex-col justify-center items-center bg-gray-900 overflow-hidden">
+      {/* Dynamic Background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-purple-900/40 to-black z-0"></div>
+      
+      {/* Audio Visualizer Waves (CSS Animation) */}
+      <div className="absolute inset-0 flex items-center justify-center gap-1 opacity-30 z-0">
+        {[...Array(20)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="w-2 bg-purple-500/50 rounded-full"
+            animate={isPlaying ? { 
+              height: [20, Math.random() * 120 + 20, 20] 
+            } : { height: 20 }}
+            transition={{ 
+              duration: 0.4 + Math.random() * 0.3, 
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: i * 0.05
+            }}
+          />
+        ))}
+      </div>
+
+      <div className="z-10 bg-black/40 backdrop-blur-xl border border-white/10 p-8 rounded-3xl w-full max-w-sm flex flex-col items-center gap-6 shadow-2xl">
+        <div className="w-32 h-32 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-500/30 relative">
+          <Headphones size={48} className="text-white relative z-10" />
+          {isPlaying && (
+            <div className="absolute inset-0 rounded-full border border-white/30 animate-ping opacity-50"></div>
+          )}
+        </div>
+
+        <div className="text-center space-y-2">
+          <h3 className="text-xl font-bold text-white">Audio Insight</h3>
+          <p className="text-gray-400 text-sm">Listen to key takeaways</p>
+        </div>
+
+        <div className="w-full bg-white/10 h-16 rounded-xl flex items-center justify-center p-4 overflow-hidden relative">
+             <div className="flex items-center gap-1 w-full h-8 justify-center">
+                 {[...Array(24)].map((_, i) => (
+                    <motion.div 
+                        key={i}
+                        className="w-1.5 bg-gradient-to-t from-purple-500 to-blue-400 rounded-full"
+                        animate={isPlaying ? { height: [4, Math.random() * 24 + 4, 4] } : { height: 4 }}
+                        transition={{ duration: 0.2, repeat: Infinity, delay: i * 0.03 }}
+                    />
+                 ))}
+             </div>
+        </div>
+        
+        <div className="flex items-center gap-6 w-full justify-center">
+             <button className="text-gray-400 hover:text-white transition-colors" title="Volume"><Volume2 size={20} /></button>
+             
+             <button 
+                onClick={handleToggle}
+                className="w-16 h-16 bg-white rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all text-black shadow-xl shadow-purple-500/20"
+             >
+                {isPlaying ? (
+                    <div className="flex gap-1.5 h-6 items-center justify-center">
+                        <div className="w-1.5 h-full bg-black rounded-full animate-pulse"></div>
+                        <div className="w-1.5 h-full bg-black rounded-full animate-pulse delay-75"></div>
+                    </div>
+                ) : (
+                    <Play size={28} fill="currentColor" className="ml-1" />
+                )}
+             </button>
+             
+             <span className="text-xs text-gray-400 font-mono w-10 text-right">{isPlaying ? "Active" : "Paused"}</span>
+        </div>
+
+        <div className="bg-black/40 p-4 rounded-xl w-full border border-white/5 max-h-32 overflow-y-auto custom-scrollbar">
+            <p className="text-sm text-gray-300 italic text-center leading-relaxed">"{reel.content}"</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+  
 // --- SIMPLIFIED CARD FOR REELS ---
 const ReelCard = ({
   reel,
@@ -124,6 +346,7 @@ const ReelCard = ({
             {reel.type === 'text' && <TextReel reel={reel} />}
             {reel.type === 'image' && <ImageReel reel={reel} />}
             {reel.type === 'video' && <VideoReel reel={reel} isActive={isActive} />}
+            {reel.type === 'audio' && <AudioReel reel={reel} isActive={isActive} />}
         </div>
 
         {/* Footer hint */}
@@ -253,6 +476,12 @@ const NoteFeed: React.FC<NoteFeedProps> = ({ notes, user, onClose }) => {
                                 >
                                     <Video size={16} /> Video
                                 </button>
+                                <button 
+                                    onClick={() => setSelectedFormat('audio')}
+                                    className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${selectedFormat === 'audio' ? 'bg-purple-600 text-white shadow-lg' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}
+                                >
+                                    <Mic size={16} /> Audio
+                                </button>
                             </div>
                         </div>
 
@@ -320,14 +549,22 @@ const NoteFeed: React.FC<NoteFeedProps> = ({ notes, user, onClose }) => {
                                     {selectedFormat === 'text' && "Card-based Learning"}
                                     {selectedFormat === 'image' && "Visual Flashcards"}
                                     {selectedFormat === 'video' && "Video Summaries"}
+                                    {selectedFormat === 'audio' && "Audio Insights"}
                                 </h3>
                                 <p className="text-discord-textMuted text-sm leading-relaxed mb-6">
                                     {selectedFormat === 'text' && "Classic text-based cards for focused reading and quick absorbtion of facts."}
                                     {selectedFormat === 'image' && "Visual representations of concepts to help visual learners retain information better."}
                                     {selectedFormat === 'video' && "Dynamic video-style playback with scripted narration for an immersive experience."}
+                                    {selectedFormat === 'audio' && "Listen to key summaries while you commute or relax. Hands-free learning."}
                                 </p>
 
                                 <div className="space-y-3">
+                                    <div className={`flex items-center gap-3 text-sm transition-colors ${selectedFormat === 'audio' ? 'text-white' : 'text-gray-400'}`}>
+                                        <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
+                                            <Mic size={14} className="text-green-400" fill="currentColor" />
+                                        </div>
+                                        <span>Audio Reels</span>
+                                    </div>
                                     <div className={`flex items-center gap-3 text-sm transition-colors ${selectedFormat === 'video' ? 'text-white' : 'text-gray-400'}`}>
                                         <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
                                             <Play size={14} className="text-purple-400" fill="currentColor" />
