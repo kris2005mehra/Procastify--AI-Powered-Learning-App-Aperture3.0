@@ -388,10 +388,39 @@ const Routine: React.FC<RoutineProps> = ({ user, setUser, notes, setNotes, onSta
                                             {task.type === 'procastify' ? 'Guilt-Free Break' : task.type}
                                         </span>
                                         <span className="text-xs text-discord-textMuted flex items-center gap-1">
-                                            <Clock size={12} /> {task.durationMinutes}m
-                                        </span>
+    <Clock size={12} />
+    <input
+        type="number"
+        value={task.durationMinutes}
+        onChange={(e) => {
+            setTasks(prev =>
+                prev.map(t =>
+                    t.id === task.id
+                        ? { ...t, durationMinutes: Number(e.target.value) }
+                        : t
+                )
+            );
+        }}
+        className="w-14 bg-discord-bg border border-white/10 rounded px-1 py-0.5 text-xs text-white outline-none"
+    />
+    m
+</span>
+
                                     </div>
-                                    <h3 className="font-bold text-xl text-white">{task.title}</h3>
+                                    <input
+    value={task.title}
+    onChange={(e) => {
+        setTasks(prev =>
+            prev.map(t =>
+                t.id === task.id
+                    ? { ...t, title: e.target.value }
+                    : t
+            )
+        );
+    }}
+    className="font-bold text-xl text-white bg-transparent outline-none w-full"
+/>
+
                                 </div>
                                 <button
                                     onClick={() => updateTaskStatus(task.id)}
